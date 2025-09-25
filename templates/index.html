@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Classificador de Documentos com IA | Projeto Final</title>
+ <script src="https://cdn.tailwindcss.com"></script>
+ <script>
+  // Habilitar dark mode manual
+  tailwind.config = { darkMode: 'class' }
+ </script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans transition-colors min-h-screen">
+  <header class="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-md">
+  <div class="max-w-6xl mx-auto px-6 py-5 flex justify-between items-center">
+   <h1 class="text-2xl md:text-3xl font-extrabold tracking-wide flex items-center gap-2">
+    📧 Classificador Inteligente de Emails
+   </h1>
+      <button id="theme-toggle" class="px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-sm transition">
+    🌙 Alternar Tema
+   </button>
+  </div>
+ </header>
+
+  <main class="max-w-6xl mx-auto p-6 grid lg:grid-cols-3 gap-6 mt-6">
+    <section class="md:col-span-2 flex flex-col bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl">
+   <h2 class="text-xl font-bold text-blue-600 dark:text-blue-400 border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">📥 Entrada de Dados</h2>
+
+   <form id="email-form" class="space-y-4 flex-1 flex flex-col">
+        <label for="email-content" class="font-medium">Cole o Conteúdo (Email, Solicitação, etc.):</label>
+    <textarea id="email-content" placeholder="Cole aqui o texto para análise..."
+     class="w-full flex-1 p-4 border rounded-xl resize-y focus:ring-2 focus:ring-blue-500 focus:outline-none dark:bg-gray-700 dark:border-gray-600"></textarea>
+    <div class="text-right text-sm text-gray-500 dark:text-gray-400">Caracteres: <span id="char-count">0</span></div>
+
+        <div class="flex items-center my-4">
+     <hr class="flex-grow border-gray-300 dark:border-gray-600">
+     <span class="px-3 text-gray-500 dark:text-gray-400 text-sm">OU</span>
+     <hr class="flex-grow border-gray-300 dark:border-gray-600">
+    </div>
+
+        <label for="file-upload" class="font-medium">📂 Upload de Arquivo (PDF, DOCX, TXT):</label>
+    <input type="file" id="file-upload" accept=".pdf,.docx,.txt"
+     class="w-full p-3 border border-dashed rounded-xl bg-gray-50 dark:bg-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"/>
+
+        <div class="grid grid-cols-2 gap-3 mt-4">
+     <button type="submit" id="submit-btn"
+      class="py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-700 text-white font-semibold hover:from-blue-600 hover:to-blue-800 shadow-md transition">
+      🚀 Analisar
+     </button>
+     <button type="button" id="clear-btn"
+      class="py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold hover:from-red-600 hover:to-red-700 shadow-md transition">
+      🗑️ Limpar
+     </button>
+    </div>
+   </form>
+  </section>
+
+    <section class="md:col-span-1 flex flex-col bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl">
+   <h2 class="text-xl font-bold text-blue-600 dark:text-blue-400 border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">📊 Resultados da IA</h2>
+   
+      <div id="loading-message" class="hidden text-blue-600 dark:text-blue-400 font-semibold text-center mt-6 p-4 border border-blue-300 dark:border-blue-700 rounded-xl bg-blue-50 dark:bg-gray-700 animate-pulse">
+    ⚙️ Processando... Aguarde!
+   </div>
+
+   <div id="results-container" class="hidden space-y-6 flex-1">
+    
+        <div>
+     <h3 class="font-semibold mb-2">Status de Triagem:</h3>
+     <div id="classification-display"
+      class="p-4 rounded-xl text-center font-bold text-lg border dark:border-gray-600">
+     </div>
+    </div>
+
+        <div class="flex flex-col flex-1">
+     <h3 class="font-semibold mb-2 flex items-center justify-between">
+      Resposta Sugerida
+      <button class="copy-btn px-3 py-1 rounded-lg bg-gray-500 text-white text-sm hover:bg-gray-600 transition"
+       onclick="copyResponse()">📋 Copiar</button>
+     </h3>
+     <div id="resposta-sugerida"
+      class="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border dark:border-gray-600 italic whitespace-pre-wrap flex-1"></div>
+            
+            <button onclick="fakeResponseAction()"
+                class="mt-4 py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold hover:from-green-600 hover:to-green-700 shadow-md transition">
+                ✅ Enviar Resposta Automática
+            </button>
+    </div>
+   </div>
+  </section>
+ </main>
+
+  <script>
+  // --- Configuração do Tema ---
+  const themeToggle = document.getElementById('theme-toggle');
+  const html = document.documentElement;
+  
+  // Lógica para inicializar e alternar o Dark Mode
+  const isDarkMode = localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  if (isDarkMode) {
+   html.classList.add('dark');
+   themeToggle.textContent = '☀️ Alternar Tema';
+  } else {
+   html.classList.remove('dark');
+   themeToggle.textContent = '🌙 Alternar Tema';
+  }
+
+  themeToggle.addEventListener('click', () => {
+   html.classList.toggle('dark');
+   if (html.classList.contains('dark')) {
+    localStorage.setItem('theme', 'dark');
+    themeToggle.textContent = '☀️ Alternar Tema';
+   } else {
+    localStorage.setItem('theme', 'light');
+    themeToggle.textContent = '🌙 Alternar Tema';
+   }
+  });
+
+  // --- Variáveis do DOM ---
+  const form = document.getElementById('email-form');
+  const emailContent = document.getElementById('email-content');
+  const fileUpload = document.getElementById('file-upload');
+  const resultsContainer = document.getElementById('results-container');
+  const classificationDisplay = document.getElementById('classification-display');
+  const respostaSugerida = document.getElementById('resposta-sugerida');
+  const loadingMessage = document.getElementById('loading-message');
+  const submitBtn = document.getElementById('submit-btn');
+  const clearBtn = document.getElementById('clear-btn');
+  const charCount = document.getElementById('char-count');
+
+  // --- Funções de Usabilidade e Limpeza ---
+  
+  emailContent.addEventListener('input', () => {
+   charCount.textContent = emailContent.value.length;
+  });
+
+  clearBtn.addEventListener('click', () => {
+   emailContent.value = '';
+   fileUpload.value = '';
+   charCount.textContent = '0';
+   resultsContainer.classList.add('hidden');
+   classificationDisplay.className = 'p-4 rounded-xl text-center font-bold text-lg border dark:border-gray-600';
+   classificationDisplay.textContent = '';
+   respostaSugerida.textContent = '';
+   loadingMessage.classList.add('hidden');
+   submitBtn.disabled = false;
+  });
+
+  function copyResponse() {
+   const textToCopy = respostaSugerida.textContent;
+   navigator.clipboard.writeText(textToCopy).then(() => {
+    alert('Resposta copiada!');
+   }).catch(err => {
+    alert('Erro ao copiar: ' + err.message);
+   });
+  }
+  window.copyResponse = copyResponse; 
+
+    // --- FUNÇÃO FAKE DE RESPOSTA AUTOMÁTICA ---
+    function fakeResponseAction() {
+        const classificacao = classificationDisplay.textContent;
+        const resposta = respostaSugerida.textContent;
+        
+        if (!resposta || classificacao === 'ERRO') {
+            alert('Não há resposta válida para enviar.');
+            return;
+        }
+
+        // Ação de simulação
+        alert(`Simulação: Email classificado como ${classificacao} e a seguinte resposta foi ENVIADA AUTOMATICAMENTE:\n\n"${resposta.substring(0, 80)}..."`);
+        
+        // Opcional: Limpa a tela após a simulação de envio
+        clearBtn.click();
+    }
+    window.fakeResponseAction = fakeResponseAction;
+
+
+  // --- Lógica de Classificação de Estilos (Tailwind) ---
+
+  function applyClassificationStyle(classification) {
+   let baseClasses = 'p-4 rounded-xl text-center font-bold text-lg border';
+   let colorClasses = '';
+
+   if (classification === 'PRODUTIVO') {
+    colorClasses = 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900 dark:text-green-300 dark:border-green-600';
+   } else if (classification === 'IMPRODUTIVO') {
+    colorClasses = 'bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900 dark:text-yellow-300 dark:border-yellow-600';
+   } else {
+    colorClasses = 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900 dark:text-red-300 dark:border-red-600'; // ERRO
+   }
+        // Mantém as classes base do dark mode e aplica as classes de cor
+   classificationDisplay.className = `${baseClasses} ${colorClasses} dark:border-gray-600`;
+  }
+
+  // --- Lógica de Submissão REAL (Fetch API) ---
+  form.addEventListener('submit', async (e) => {
+   e.preventDefault();
+   const emailText = emailContent.value.trim();
+   const file = fileUpload.files[0];
+   if (!emailText && !file) {
+    alert('Por favor, insira um texto ou selecione um arquivo.');
+    return;
+   }
+
+   loadingMessage.classList.remove('hidden');
+   submitBtn.disabled = true;
+   resultsContainer.classList.add('hidden');
+
+   let response;
+   
+   try {
+    if (file) {
+     // 1. Upload de Arquivo (Multipart Form Data)
+     const formData = new FormData();
+     formData.append('file', file);
+     
+     response = await fetch('/api/processar', {
+      method: 'POST',
+      body: formData
+     });
+    } else {
+     // 2. Texto Colado (JSON)
+     response = await fetch('/api/processar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: emailText })
+     });
+    }
+    
+    if (!response.ok) {
+     throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Lógica para exibir os resultados
+    const classificacao = data.classificacao ? data.classificacao.toUpperCase() : 'ERRO';
+    
+    classificationDisplay.textContent = classificacao;
+    applyClassificationStyle(classificacao);
+    
+    respostaSugerida.textContent = data.resposta_sugerida || 'Resposta indisponível.';
+    
+    resultsContainer.classList.remove('hidden');
+
+   } catch (error) {
+    console.error('Erro na requisição ou servidor:', error);
+    classificationDisplay.textContent = 'ERRO DE CONEXÃO';
+    applyClassificationStyle('ERRO');
+    respostaSugerida.textContent = `Falha ao conectar com o backend. Detalhe: ${error.message}`;
+    resultsContainer.classList.remove('hidden');
+    alert('Erro ao comunicar com a API. Verifique o console do navegador.');
+   } finally {
+    loadingMessage.classList.add('hidden');
+    submitBtn.disabled = false;
+   }
+  });
+ </script>
+</body>
+</html>
