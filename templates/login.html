@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Login - Classificador de Documentos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans transition-colors min-h-screen flex items-center justify-center p-6">
+
+    <div class="w-full max-w-sm bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl space-y-6">
+        <h2 class="text-3xl font-bold text-center text-blue-600 dark:text-blue-400">Login Administrativo</h2>
+        <p class="text-center text-sm text-gray-500 dark:text-gray-400">Use **'admin'** e **'senha123'** para acessar.</p>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="space-y-2">
+            {% for category, message in messages %}
+            <div class="px-4 py-3 rounded-xl border {{ 'bg-green-100 text-green-700 border-green-400' if category == 'success' else 'bg-yellow-100 text-yellow-700 border-yellow-400' if category == 'warning' else 'bg-red-100 text-red-700 border-red-400' }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <form action="/login" method="POST" class="space-y-4">
+            <div>
+                <label for="username" class="block text-sm font-medium mb-1">Nome de Usuário</label>
+                <input type="text" id="username" name="username" required 
+                    class="w-full px-4 py-3 rounded-xl border dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="admin">
+            </div>
+            <div>
+                <label for="password" class="block text-sm font-medium mb-1">Senha</label>
+                <input type="password" id="password" name="password" required
+                    class="w-full px-4 py-3 rounded-xl border dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="senha123">
+            </div>
+            <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-500 to-blue-700 text-white font-semibold hover:from-blue-600 hover:to-blue-800 shadow-lg transition">
+                Entrar
+            </button>
+        </form>
+    </div>
+
+</body>
+</html>
