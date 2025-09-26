@@ -3,14 +3,29 @@
 <head>
  <meta charset="UTF-8" />
  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
- <title>Classificador de Documentos com IA | Projeto Final</title>
+ <title>Classificador de emails com IA | Projeto Final</title>
  <script src="https://cdn.tailwindcss.com"></script>
  <script>
-  // Habilitar dark mode manual
-  tailwind.config = { darkMode: 'class' }
+  // Configuração do Tailwind com Dark Mode e a animação customizada de carregamento
+  tailwind.config = { 
+        darkMode: 'class',
+        theme: {
+            extend: {
+                keyframes: {
+                    indeterminate: {
+                        '0%': { transform: 'translateX(-100%)' },
+                        '100%': { transform: 'translateX(400%)' },
+                    },
+                },
+                animation: {
+                    indeterminate: 'indeterminate 2s linear infinite',
+                }
+            }
+        }
+    }
  </script>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans transition-colors min-h-screen">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-sans transition-colors min-h-screen flex flex-col">
   <header class="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-md">
   <div class="max-w-6xl mx-auto px-6 py-5 flex justify-between items-center">
    <h1 class="text-2xl md:text-3xl font-extrabold tracking-wide flex items-center gap-2">
@@ -22,7 +37,7 @@
   </div>
  </header>
 
-  <main class="max-w-6xl mx-auto p-6 grid lg:grid-cols-3 gap-6 mt-6">
+  <main class="max-w-6xl mx-auto p-6 grid lg:grid-cols-3 gap-6 mt-6 flex-grow">
     <section class="md:col-span-2 flex flex-col bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl">
    <h2 class="text-xl font-bold text-blue-600 dark:text-blue-400 border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">📥 Entrada de Dados</h2>
 
@@ -58,7 +73,11 @@
     <section class="md:col-span-1 flex flex-col bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl">
    <h2 class="text-xl font-bold text-blue-600 dark:text-blue-400 border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">📊 Resultados da IA</h2>
    
-      <div id="loading-message" class="hidden text-blue-600 dark:text-blue-400 font-semibold text-center mt-6 p-4 border border-blue-300 dark:border-blue-700 rounded-xl bg-blue-50 dark:bg-gray-700 animate-pulse">
+      <div id="loading-indicator" class="hidden h-1 bg-blue-500 w-full rounded-full overflow-hidden">
+    <div class="h-full bg-blue-700 w-1/4 animate-indeterminate"></div>
+   </div>
+   
+      <div id="loading-text" class="hidden text-blue-600 dark:text-blue-400 font-semibold text-center mt-6 p-4 border border-blue-300 dark:border-blue-700 rounded-xl bg-blue-50 dark:bg-gray-700">
     ⚙️ Processando... Aguarde!
    </div>
 
@@ -89,6 +108,16 @@
   </section>
  </main>
 
+  <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-8 py-4 shadow-inner">
+  <div class="max-w-6xl mx-auto px-6 text-center text-sm text-gray-500 dark:text-gray-400">
+   <span>© 2025 Classificador de emails by Almir Neto. Todos os direitos reservados.</span>
+   <span class="mx-2">|</span>
+   <a href="https://github.com/netofrg/Classificador-de-emails" target="_blank" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition font-medium">
+    🔗 Ver Código no GitHub
+   </a>
+  </div>
+ </footer>
+
   <script>
   // --- Configuração do Tema ---
   const themeToggle = document.getElementById('theme-toggle');
@@ -115,14 +144,15 @@
    }
   });
 
-  // --- Variáveis do DOM ---
+  // --- Variáveis ---
   const form = document.getElementById('email-form');
   const emailContent = document.getElementById('email-content');
   const fileUpload = document.getElementById('file-upload');
   const resultsContainer = document.getElementById('results-container');
   const classificationDisplay = document.getElementById('classification-display');
   const respostaSugerida = document.getElementById('resposta-sugerida');
-  const loadingMessage = document.getElementById('loading-message');
+  const loadingIndicator = document.getElementById('loading-indicator');
+  const loadingText = document.getElementById('loading-text');
   const submitBtn = document.getElementById('submit-btn');
   const clearBtn = document.getElementById('clear-btn');
   const charCount = document.getElementById('char-count');
@@ -141,7 +171,10 @@
    classificationDisplay.className = 'p-4 rounded-xl text-center font-bold text-lg border dark:border-gray-600';
    classificationDisplay.textContent = '';
    respostaSugerida.textContent = '';
-   loadingMessage.classList.add('hidden');
+   
+   // Esconde o loading
+   loadingIndicator.classList.add('hidden');
+   loadingText.classList.add('hidden');
    submitBtn.disabled = false;
   });
 
@@ -155,20 +188,16 @@
   }
   window.copyResponse = copyResponse; 
 
-    // --- FUNÇÃO FAKE DE RESPOSTA AUTOMÁTICA ---
     function fakeResponseAction() {
         const classificacao = classificationDisplay.textContent;
         const resposta = respostaSugerida.textContent;
         
-        if (!resposta || classificacao === 'ERRO') {
+        if (!resposta || classificacao === 'ERRO' || classificacao === 'ERRO DE CONEXÃO') {
             alert('Não há resposta válida para enviar.');
             return;
         }
 
-        // Ação de simulação
         alert(`Simulação: Email classificado como ${classificacao} e a seguinte resposta foi ENVIADA AUTOMATICAMENTE:\n\n"${resposta.substring(0, 80)}..."`);
-        
-        // Opcional: Limpa a tela após a simulação de envio
         clearBtn.click();
     }
     window.fakeResponseAction = fakeResponseAction;
@@ -201,7 +230,9 @@
     return;
    }
 
-   loadingMessage.classList.remove('hidden');
+   // Mostra a nova barra e o texto de "Processando"
+   loadingIndicator.classList.remove('hidden');
+   loadingText.classList.remove('hidden');
    submitBtn.disabled = true;
    resultsContainer.classList.add('hidden');
 
@@ -209,7 +240,7 @@
    
    try {
     if (file) {
-     // 1. Upload de Arquivo (Multipart Form Data)
+     // Upload de Arquivo
      const formData = new FormData();
      formData.append('file', file);
      
@@ -218,7 +249,7 @@
       body: formData
      });
     } else {
-     // 2. Texto Colado (JSON)
+     // Texto Colado (JSON)
      response = await fetch('/api/processar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -250,19 +281,12 @@
     resultsContainer.classList.remove('hidden');
     alert('Erro ao comunicar com a API. Verifique o console do navegador.');
    } finally {
-    loadingMessage.classList.add('hidden');
+    // Esconde o loading
+    loadingIndicator.classList.add('hidden');
+    loadingText.classList.add('hidden');
     submitBtn.disabled = false;
    }
   });
  </script>
-   <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-8 py-4 shadow-inner">
-  <div class="max-w-6xl mx-auto px-6 text-center text-sm text-gray-500 dark:text-gray-400">
-   <span>© 2024 Classificador de Emails by AN Dev. Todos os direitos reservados.</span>
-   <span class="mx-2">|</span>
-   <a href="https://github.com/SEU_USUARIO_GITHUB" target="_blank" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition font-medium">
-    🔗 Ver Código no GitHub
-   </a>
-  </div>
- </footer>
 </body>
 </html>
